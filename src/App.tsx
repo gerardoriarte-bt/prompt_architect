@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import logo from './lobueno-logo.png';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Camera, 
@@ -207,15 +208,21 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white font-sans flex flex-col">
       {/* Navigation Header */}
-      <header className="sticky top-0 z-[100] bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5 px-6 py-4">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-[100] bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5 px-6 py-3">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-center relative">
+          <div className="absolute left-0 flex items-center gap-3">
             <div className="w-8 h-8 bg-[#FF6B00] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,107,0,0.4)]">
               <Zap className="text-white w-5 h-5" />
             </div>
-            <div>
-              <p className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter mt-1">powered by LoBueno</p>
-            </div>
+            <h1 className="hidden md:block text-white font-mono text-xs font-bold tracking-widest uppercase">Prompt Architect</h1>
+          </div>
+          
+          <div className="flex flex-col items-center">
+            <img src={logo} alt="LoBueno Logo" className="h-6 md:h-8 object-contain brightness-0 invert opacity-90" />
+          </div>
+
+          <div className="absolute right-0 flex items-center gap-3">
+            <p className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter">powered by LoBueno</p>
           </div>
         </div>
       </header>
