@@ -214,8 +214,7 @@ export default function App() {
               <Zap className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-white font-mono text-sm font-bold tracking-widest uppercase leading-none">Prompt Architect</h1>
-              <p className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter mt-1">v2.4 Cinematic Engine</p>
+              <p className="text-[9px] text-gray-500 font-mono uppercase tracking-tighter mt-1">powered by LoBueno</p>
             </div>
           </div>
         </div>
