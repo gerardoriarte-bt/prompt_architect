@@ -21,19 +21,27 @@ Analyze the user's prompt and return ONLY a valid JSON object with this structur
 {
   "feedback": [
     { "category": "<category name>", "status": "good|weak|missing", "note": "<brief actionable note>" },
-    ... (3 to 5 items, choose categories relevant to the prompt type)
+    ... (exactly 5 items, one per framework element: Role, Context, Task, Restriction, Format)
   ],
-  "optimized_prompt": "<the improved prompt>"
+  "optimized_prompt": "<the improved prompt structured with the framework below>"
 }
 
-Choose feedback categories that fit the actual purpose of the prompt. Examples:
-- Image/video prompts: Subject, Style, Composition, Lighting, Mood
-- Text/chat/marketing prompts: Context, Instruction, Tone, Format, Target Audience
-- Coding prompts: Task Definition, Input/Output, Constraints, Language/Framework, Examples
-- Adapt freely for any other type.
+FEEDBACK: Evaluate the original prompt against each of the 5 framework elements:
+1. Role — Does it define who or what the AI should act as?
+2. Context — Does it provide relevant background or situational information?
+3. Task — Is the core instruction clear and specific?
+4. Restriction — Does it set limits, constraints, or things to avoid?
+5. Format — Does it specify the desired output structure, length, or style?
+
+OPTIMIZED PROMPT: Rewrite the prompt applying the 5-element framework. Use this exact layout, with each label translated to the detected language:
+[Role label]: ...
+[Context label]: ...
+[Task label]: ...
+[Restriction label]: ...
+[Format label]: ...
 
 CRITICAL RULES:
-1. Detect the language of the user's input and write EVERYTHING in the JSON — category names, notes, and optimized_prompt — in that exact same language.
+1. Detect the language of the user's input and write EVERYTHING — category names, notes, framework labels, and the optimized prompt content — in that exact same language.
 2. Do not include markdown formatting or any text outside the JSON.`;
 
 export async function analyzePrompt(prompt: string, apiKey: string): Promise<AnalysisResult> {
