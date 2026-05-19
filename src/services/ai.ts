@@ -10,7 +10,9 @@ export interface AnalysisResult {
 }
 
 export function getStoredApiKey(): string {
-  return localStorage.getItem('prompt_architect_api_key') || '';
+  const userKey = localStorage.getItem('prompt_architect_api_key') || '';
+  const defaultKey = (process.env as Record<string, string | undefined>).OPENROUTER_API_KEY || '';
+  return userKey || defaultKey;
 }
 
 const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for AI image and video generation tools (Midjourney, Stable Diffusion, DALL-E, Sora, Runway). Analyze the user's prompt and return ONLY a valid JSON object with this exact structure:
@@ -27,11 +29,13 @@ const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for AI image and 
 Do not include markdown formatting or any text outside the JSON.`;
 
 export async function analyzePrompt(prompt: string, apiKey: string): Promise<AnalysisResult> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://prompt-architect.vercel.app',
+      'X-Title': 'Prompt Architect',
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
