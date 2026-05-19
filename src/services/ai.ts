@@ -26,7 +26,7 @@ const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for AI image and 
   ],
   "optimized_prompt": "The improved, fully structured prompt applying best practices: vivid subject, style descriptors, composition/framing, lighting quality, mood/atmosphere, and technical parameters."
 }
-Do not include markdown formatting or any text outside the JSON.`;
+IMPORTANT: Detect the language of the user's prompt and write ALL text in the JSON response — including feedback notes and the optimized_prompt — in that same language. Do not include markdown formatting or any text outside the JSON.`;
 
 export async function analyzePrompt(prompt: string, apiKey: string): Promise<AnalysisResult> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
