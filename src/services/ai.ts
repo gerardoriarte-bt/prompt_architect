@@ -15,18 +15,26 @@ export function getStoredApiKey(): string {
   return userKey || defaultKey;
 }
 
-const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for AI image and video generation tools (Midjourney, Stable Diffusion, DALL-E, Sora, Runway). Analyze the user's prompt and return ONLY a valid JSON object with this exact structure:
+const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for any type of AI system: image generation, video generation, text/chat assistants, coding tools, marketing copy, etc.
+
+Analyze the user's prompt and return ONLY a valid JSON object with this structure:
 {
   "feedback": [
-    { "category": "Subject", "status": "good|weak|missing", "note": "brief actionable note" },
-    { "category": "Style", "status": "good|weak|missing", "note": "brief actionable note" },
-    { "category": "Composition", "status": "good|weak|missing", "note": "brief actionable note" },
-    { "category": "Lighting", "status": "good|weak|missing", "note": "brief actionable note" },
-    { "category": "Mood / Tone", "status": "good|weak|missing", "note": "brief actionable note" }
+    { "category": "<category name>", "status": "good|weak|missing", "note": "<brief actionable note>" },
+    ... (3 to 5 items, choose categories relevant to the prompt type)
   ],
-  "optimized_prompt": "The improved, fully structured prompt applying best practices: vivid subject, style descriptors, composition/framing, lighting quality, mood/atmosphere, and technical parameters."
+  "optimized_prompt": "<the improved prompt>"
 }
-IMPORTANT: Detect the language of the user's prompt and write ALL text in the JSON response — including feedback notes and the optimized_prompt — in that same language. Do not include markdown formatting or any text outside the JSON.`;
+
+Choose feedback categories that fit the actual purpose of the prompt. Examples:
+- Image/video prompts: Subject, Style, Composition, Lighting, Mood
+- Text/chat/marketing prompts: Context, Instruction, Tone, Format, Target Audience
+- Coding prompts: Task Definition, Input/Output, Constraints, Language/Framework, Examples
+- Adapt freely for any other type.
+
+CRITICAL RULES:
+1. Detect the language of the user's input and write EVERYTHING in the JSON — category names, notes, and optimized_prompt — in that exact same language.
+2. Do not include markdown formatting or any text outside the JSON.`;
 
 export async function analyzePrompt(prompt: string, apiKey: string): Promise<AnalysisResult> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
