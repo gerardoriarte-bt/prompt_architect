@@ -3,10 +3,11 @@ import logo from './lobueno-logo.png';
 import { Zap, Settings } from 'lucide-react';
 import PromptArchitectView from './components/PromptArchitectView';
 import PromptOptimizerView from './components/PromptOptimizerView';
+import PromptLibraryView from './components/PromptLibraryView';
 import SettingsModal from './components/SettingsModal';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'architect' | 'optimizer'>('architect');
+  const [currentView, setCurrentView] = useState<'architect' | 'optimizer' | 'library'>('architect');
   const [showSettings, setShowSettings] = useState(false);
 
   return (
@@ -35,6 +36,12 @@ export default function App() {
               >
                 Optimizer
               </button>
+              <button
+                onClick={() => setCurrentView('library')}
+                className={`px-4 py-1 rounded-full text-[10px] font-mono tracking-widest uppercase transition-all ${currentView === 'library' ? 'bg-[#FF6B00] text-white shadow-md' : 'text-gray-500 hover:text-white'}`}
+              >
+                Library
+              </button>
             </div>
           </div>
 
@@ -47,10 +54,9 @@ export default function App() {
         </div>
       </header>
 
-      {currentView === 'architect'
-        ? <PromptArchitectView />
-        : <PromptOptimizerView onOpenSettings={() => setShowSettings(true)} />
-      }
+      {currentView === 'architect' && <PromptArchitectView />}
+      {currentView === 'optimizer' && <PromptOptimizerView onOpenSettings={() => setShowSettings(true)} />}
+      {currentView === 'library' && <PromptLibraryView />}
 
       <footer className="mt-auto border-t border-white/5 bg-[#0A0A0B] py-12 px-6">
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
