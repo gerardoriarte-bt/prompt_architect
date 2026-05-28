@@ -171,9 +171,8 @@ export default function PromptLibraryView() {
                         <p className="text-xs text-gray-400 leading-relaxed">{p.desc}</p>
 
                         {/* Prompt preview */}
-                        <div className="bg-[#0A0A0B] border border-white/5 rounded-lg p-3 font-mono text-[11px] text-gray-400 leading-relaxed relative overflow-hidden max-h-[100px]">
+                        <div className="bg-[#0A0A0B] border border-white/5 rounded-lg p-3 font-mono text-[11px] text-gray-400 leading-relaxed overflow-y-auto max-h-[120px] custom-scrollbar">
                           <span className="whitespace-pre-wrap">{p.prompt}</span>
-                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#0A0A0B] to-transparent" />
                         </div>
 
                         {/* Tags */}
