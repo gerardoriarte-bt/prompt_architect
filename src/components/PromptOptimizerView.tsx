@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Sparkles, Copy, Check, AlertCircle, Loader2, Settings, ThumbsUp, AlertTriangle, XCircle } from 'lucide-react';
 import { analyzePrompt, getStoredApiKey, type FeedbackItem, type AnalysisResult } from '../services/ai';
 
 interface Props {
   onOpenSettings: () => void;
 }
+
+const MAX_PROMPT_LENGTH = 4000;
 
 function StatusIcon({ status }: { status: FeedbackItem['status'] }) {
   if (status === 'good') return <ThumbsUp className="w-3.5 h-3.5 text-green-400" />;
@@ -24,6 +26,7 @@ export default function PromptOptimizerView({ onOpenSettings }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const analysisCache = useRef<Map<string, AnalysisResult>>(new Map());
 
   const hasApiKey = !!getStoredApiKey();
 
@@ -33,12 +36,22 @@ export default function PromptOptimizerView({ onOpenSettings }: Props) {
       setError('No API key found. Please add your OpenAI API key in Settings.');
       return;
     }
-    if (!inputPrompt.trim()) return;
+    const trimmed = inputPrompt.trim();
+    if (!trimmed) return;
+
+    const cached = analysisCache.current.get(trimmed);
+    if (cached) {
+      setError(null);
+      setResult(cached);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const analysis = await analyzePrompt(inputPrompt.trim(), apiKey);
+      const analysis = await analyzePrompt(trimmed, apiKey);
+      analysisCache.current.set(trimmed, analysis);
       setResult(analysis);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'An unexpected error occurred.');
@@ -85,10 +98,11 @@ export default function PromptOptimizerView({ onOpenSettings }: Props) {
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder="Paste your prompt here... e.g. 'a woman standing in a forest'"
+              maxLength={MAX_PROMPT_LENGTH}
               className="flex-1 w-full bg-[#2A2B2F] border border-white/5 rounded-xl p-4 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#FF6B00]/50 transition-colors resize-none min-h-[220px] custom-scrollbar"
             />
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-[10px] text-gray-600 font-mono">{inputPrompt.length} chars</p>
+              <p className="text-[10px] text-gray-600 font-mono">{inputPrompt.length} / {MAX_PROMPT_LENGTH} chars</p>
               <button
                 onClick={handleAnalyze}
                 disabled={loading || !inputPrompt.trim()}

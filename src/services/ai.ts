@@ -44,6 +44,13 @@ CRITICAL RULES:
 1. Detect the language of the user's input and write EVERYTHING — category names, notes, framework labels, and the optimized prompt content — in that exact same language.
 2. Do not include markdown formatting or any text outside the JSON.`;
 
+const MAX_COMPLETION_TOKENS = 1000;
+const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+
+function getModel(): string {
+  return (process.env as Record<string, string | undefined>).OPENROUTER_MODEL || DEFAULT_MODEL;
+}
+
 export async function analyzePrompt(prompt: string, apiKey: string): Promise<AnalysisResult> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -54,12 +61,13 @@ export async function analyzePrompt(prompt: string, apiKey: string): Promise<Ana
       'X-Title': 'Prompt Architect',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: getModel(),
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: prompt },
       ],
       temperature: 0.7,
+      max_tokens: MAX_COMPLETION_TOKENS,
       response_format: { type: 'json_object' },
     }),
   });
@@ -71,7 +79,13 @@ export async function analyzePrompt(prompt: string, apiKey: string): Promise<Ana
     throw new Error((err.error?.message) || `API error (${response.status})`);
   }
 
-  const data = await response.json() as { choices: { message: { content: string } }[] };
+  const data = await response.json() as {
+    choices: { message: { content: string } }[];
+    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  };
+  if (data.usage) {
+    console.debug('[prompt-architect] analyzePrompt token usage', data.usage);
+  }
   const content = data.choices[0]?.message?.content;
   if (!content) throw new Error('Empty response from AI.');
 
