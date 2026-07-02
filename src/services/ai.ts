@@ -1,93 +1,35 @@
-export interface FeedbackItem {
-  category: string;
-  status: 'good' | 'weak' | 'missing';
-  note: string;
-}
+import { callOpenRouterChat, DEFAULT_MODEL, type AnalysisResult, type FeedbackItem } from './openrouter';
 
-export interface AnalysisResult {
-  feedback: FeedbackItem[];
-  optimized_prompt: string;
-}
+export type { AnalysisResult, FeedbackItem };
 
 export function getStoredApiKey(): string {
-  const userKey = localStorage.getItem('prompt_architect_api_key') || '';
-  const defaultKey = (process.env as Record<string, string | undefined>).OPENROUTER_API_KEY || '';
-  return userKey || defaultKey;
+  return localStorage.getItem('prompt_architect_api_key') || '';
 }
 
-const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for any type of AI system: image generation, video generation, text/chat assistants, coding tools, marketing copy, etc.
-
-Analyze the user's prompt and return ONLY a valid JSON object with this structure:
-{
-  "feedback": [
-    { "category": "<category name>", "status": "good|weak|missing", "note": "<brief actionable note>" },
-    ... (exactly 5 items, one per framework element: Role, Context, Task, Restriction, Format)
-  ],
-  "optimized_prompt": "<the improved prompt structured with the framework below>"
-}
-
-FEEDBACK: Evaluate the original prompt against each of the 5 framework elements:
-1. Role — Does it define who or what the AI should act as?
-2. Context — Does it provide relevant background or situational information?
-3. Task — Is the core instruction clear and specific?
-4. Restriction — Does it set limits, constraints, or things to avoid?
-5. Format — Does it specify the desired output structure, length, or style?
-
-OPTIMIZED PROMPT: Rewrite the prompt applying the 5-element framework. Use this exact layout, with each label translated to the detected language:
-[Role label]: ...
-[Context label]: ...
-[Task label]: ...
-[Restriction label]: ...
-[Format label]: ...
-
-CRITICAL RULES:
-1. Detect the language of the user's input and write EVERYTHING — category names, notes, framework labels, and the optimized prompt content — in that exact same language.
-2. Do not include markdown formatting or any text outside the JSON.`;
-
-const MAX_COMPLETION_TOKENS = 1000;
-const DEFAULT_MODEL = 'openai/gpt-4o-mini';
-
-function getModel(): string {
+function getClientModel(): string {
   return (process.env as Record<string, string | undefined>).OPENROUTER_MODEL || DEFAULT_MODEL;
 }
 
-export async function analyzePrompt(prompt: string, apiKey: string): Promise<AnalysisResult> {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+/**
+ * If the caller supplies their own OpenRouter key (BYOK, from Settings), call OpenRouter
+ * directly from the browser. Otherwise fall back to our own /api/analyze endpoint, which
+ * holds the shared default key server-side so it's never shipped in the client bundle.
+ */
+export async function analyzePrompt(prompt: string, apiKey?: string): Promise<AnalysisResult> {
+  if (apiKey) {
+    return callOpenRouterChat(prompt, apiKey, getClientModel());
+  }
+
+  const response = await fetch('/api/analyze', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://prompt-architect.vercel.app',
-      'X-Title': 'Prompt Architect',
-    },
-    body: JSON.stringify({
-      model: getModel(),
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: MAX_COMPLETION_TOKENS,
-      response_format: { type: 'json_object' },
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
   });
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({})) as { error?: { message?: string } };
-    if (response.status === 401) throw new Error('Invalid API key. Please check your OpenAI API key in Settings.');
-    if (response.status === 429) throw new Error('Rate limit exceeded. Please wait a moment and try again.');
-    throw new Error((err.error?.message) || `API error (${response.status})`);
+    const err = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || `API error (${response.status})`);
   }
 
-  const data = await response.json() as {
-    choices: { message: { content: string } }[];
-    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-  };
-  if (data.usage) {
-    console.debug('[prompt-architect] analyzePrompt token usage', data.usage);
-  }
-  const content = data.choices[0]?.message?.content;
-  if (!content) throw new Error('Empty response from AI.');
-
-  return JSON.parse(content) as AnalysisResult;
+  return response.json() as Promise<AnalysisResult>;
 }

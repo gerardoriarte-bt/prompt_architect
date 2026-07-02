@@ -8,8 +8,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
+      // OPENROUTER_API_KEY is intentionally NOT exposed here — it must stay server-side
+      // (read directly from process.env in api/analyze.ts) so it's never shipped in the
+      // client bundle. See api/analyze.ts.
       "process.env.OPENAI_API_KEY": JSON.stringify(env.OPENAI_API_KEY),
-      "process.env.OPENROUTER_API_KEY": JSON.stringify(env.OPENROUTER_API_KEY || ''),
       "process.env.OPENROUTER_MODEL": JSON.stringify(env.OPENROUTER_MODEL || ''),
     },
     resolve: {

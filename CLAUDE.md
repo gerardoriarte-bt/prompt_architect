@@ -14,7 +14,7 @@ npm run clean      # Delete dist/
 
 Set `DISABLE_HMR=true` to disable hot module replacement in dev.
 
-Environment variable required for the OpenAI integration: `OPENAI_API_KEY` (see `.env.example`). Vite injects it as a `define` global at build time.
+Environment variable required for the Prompt Optimizer's default/shared AI access: `OPENROUTER_API_KEY` (see `.env.example`). This is **server-side only** — read directly from `process.env` inside `api/analyze.ts` (a Vercel serverless function) and must never be added to `vite.config.ts`'s `define` block, or it gets bundled in plaintext into the client JS. Users can bypass the shared key by adding their own OpenRouter key in Settings (`localStorage`), in which case the browser calls OpenRouter directly.
 
 ## Architecture
 

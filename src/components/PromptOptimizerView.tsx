@@ -31,11 +31,6 @@ export default function PromptOptimizerView({ onOpenSettings }: Props) {
   const hasApiKey = !!getStoredApiKey();
 
   const handleAnalyze = async () => {
-    const apiKey = getStoredApiKey();
-    if (!apiKey) {
-      setError('No API key found. Please add your OpenAI API key in Settings.');
-      return;
-    }
     const trimmed = inputPrompt.trim();
     if (!trimmed) return;
 
@@ -50,7 +45,8 @@ export default function PromptOptimizerView({ onOpenSettings }: Props) {
     setError(null);
     setResult(null);
     try {
-      const analysis = await analyzePrompt(trimmed, apiKey);
+      const apiKey = getStoredApiKey();
+      const analysis = await analyzePrompt(trimmed, apiKey || undefined);
       analysisCache.current.set(trimmed, analysis);
       setResult(analysis);
     } catch (e) {
@@ -82,7 +78,7 @@ export default function PromptOptimizerView({ onOpenSettings }: Props) {
       {!hasApiKey && (
         <div className="mb-6 p-4 bg-[#FF6B00]/10 border border-[#FF6B00]/20 rounded-2xl flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-[#FF6B00] shrink-0" />
-          <p className="text-sm text-gray-300 flex-1">You need an OpenAI API key to use this feature.</p>
+          <p className="text-sm text-gray-300 flex-1">You're using the shared free tier. Add your own OpenRouter key in Settings for higher limits.</p>
           <button onClick={onOpenSettings} className="flex items-center gap-1.5 px-4 py-2 bg-[#FF6B00] hover:bg-[#FF8533] rounded-lg text-xs font-mono text-white transition-colors">
             <Settings className="w-3 h-3" /> Add Key
           </button>

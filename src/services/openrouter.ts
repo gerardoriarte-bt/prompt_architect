@@ -1,0 +1,83 @@
+export interface FeedbackItem {
+  category: string;
+  status: 'good' | 'weak' | 'missing';
+  note: string;
+}
+
+export interface AnalysisResult {
+  feedback: FeedbackItem[];
+  optimized_prompt: string;
+}
+
+export const SYSTEM_PROMPT = `You are an expert in Prompt Engineering for any type of AI system: image generation, video generation, text/chat assistants, coding tools, marketing copy, etc.
+
+Analyze the user's prompt and return ONLY a valid JSON object with this structure:
+{
+  "feedback": [
+    { "category": "<category name>", "status": "good|weak|missing", "note": "<brief actionable note>" },
+    ... (exactly 5 items, one per framework element: Role, Context, Task, Restriction, Format)
+  ],
+  "optimized_prompt": "<the improved prompt structured with the framework below>"
+}
+
+FEEDBACK: Evaluate the original prompt against each of the 5 framework elements:
+1. Role — Does it define who or what the AI should act as?
+2. Context — Does it provide relevant background or situational information?
+3. Task — Is the core instruction clear and specific?
+4. Restriction — Does it set limits, constraints, or things to avoid?
+5. Format — Does it specify the desired output structure, length, or style?
+
+OPTIMIZED PROMPT: Rewrite the prompt applying the 5-element framework. Use this exact layout, with each label translated to the detected language:
+[Role label]: ...
+[Context label]: ...
+[Task label]: ...
+[Restriction label]: ...
+[Format label]: ...
+
+CRITICAL RULES:
+1. Detect the language of the user's input and write EVERYTHING — category names, notes, framework labels, and the optimized prompt content — in that exact same language.
+2. Do not include markdown formatting or any text outside the JSON.`;
+
+export const MAX_COMPLETION_TOKENS = 1000;
+export const DEFAULT_MODEL = 'openai/gpt-4o-mini';
+
+export async function callOpenRouterChat(prompt: string, apiKey: string, model: string): Promise<AnalysisResult> {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://prompt-architect.vercel.app',
+      'X-Title': 'Prompt Architect',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+      max_tokens: MAX_COMPLETION_TOKENS,
+      response_format: { type: 'json_object' },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({})) as { error?: { message?: string } };
+    if (response.status === 401) throw new Error('Invalid API key.');
+    if (response.status === 429) throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+    throw new Error((err.error?.message) || `API error (${response.status})`);
+  }
+
+  const data = await response.json() as {
+    choices: { message: { content: string } }[];
+    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  };
+  if (data.usage) {
+    console.debug('[prompt-architect] analyzePrompt token usage', data.usage);
+  }
+  const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error('Empty response from AI.');
+
+  return JSON.parse(content) as AnalysisResult;
+}
